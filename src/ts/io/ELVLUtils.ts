@@ -687,13 +687,11 @@ export class ELVLRegionAutoWarpHandler extends ELVLRegionChunkHandler<ELVLRegion
 // ## HANDLER ASSIGNMENT CODE ##
 // #############################
 
-ELVL.handlers['ATTR'] = new ELVLAttributeHandler();
-ELVL.handlers['REGN'] = new ELVLRegionHandler();
-ELVL.handlers['DCWT'] = new ELVLWallTilesHandler();
-ELVL.handlers['DCTT'] = new ELVLTextTilesHandler();
-ELVL.handlers['DCID'] = new ELVLHashCodeHandler();
-ELVL.handlers['DCBM'] = new ELVLBookmarksHandler();
-ELVL.handlers['DCLV'] = new ELVLLVZPathHandler();
+HANDLERS = [ELVLAttributeHandler, ELVLRegionHandler, ELVLWallTilesHandler, ELVLTextTilesHandler, ELVLHashCodeHandler, ELVLBookmarksHandler, ELVLLVZPathHandler];
+HANDLERS.foreach(ctor => {
+  const handler = new ctor();
+  ELVL.handlers[handler.id] = handler;
+});
 
 ELVLRegionHandler.handlers['rTIL'] = new ELVLRegionTileMapHandler();
 ELVLRegionHandler.handlers['rAWP'] = new ELVLRegionAutoWarpHandler();
