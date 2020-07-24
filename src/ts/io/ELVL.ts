@@ -1,130 +1,61 @@
 import { ELVL } from './ELVLUtils';
 
-/**
- * The <i>ELVLChunk</i> abstract class. TODO: Document.
- *
- * @author Jab
- */
-export abstract class ELVLChunk {
-
-  readonly id: string;
-
-  /**
-   * @constructor
-   *
-   * @param {string} id
-   */
-  protected constructor(id: string) {
-    this.id = id;
-  }
-
-  abstract equals(next: any): boolean;
-
-  abstract validate(): void;
+export interface ELVLChunk {
+  id: string;
+  equals(next: ELVLChunk): boolean;
+  // TODO(JabJabJab): If this is only going to be called from each object's constructor, consider omitting it from the interface.
+  validate(): void;
 }
 
-/**
- * The <i>ELVLRegionChunk</i> abstract class. TODO: Document.
- *
- * @author Jab
- */
-export abstract class ELVLRegionChunk {
-
-  readonly id: string;
-
-  /**
-   * @constructor
-   *
-   * @param {string} id
-   */
-  protected constructor(id: string) {
-    this.id = id;
-  }
+export interface class ELVLRegionChunk {
+  id: string;
 }
 
-/**
- * The <i>ELVLCollection</i> class. TODO: Document.
- *
- * @author Jab
- */
 export class ELVLCollection {
 
-  readonly chunks: ELVLChunk[];
-  readonly regions: ELVLRegion[];
-  readonly attributes: ELVLAttribute[];
-
-  /** @constructor */
-  constructor() {
-    this.chunks = [];
-    this.regions = [];
-    this.attributes = [];
-  }
+  readonly chunks: ELVLChunk[] = [];
+  readonly regions: ELVLRegion[] = [];
+  readonly attributes: ELVLAttribute[] = [];
 
   addChunk(chunk: ELVLChunk): void {
-    if (chunk == null) {
-      throw new Error('The ELVLChunk is null or undefined.');
-    } else if (this.hasChunk(chunk)) {
+    if (this.hasChunk(chunk)) {
       throw new Error('The ELVLChunk is already in the collection.');
     }
     this.chunks.push(chunk);
   }
 
   addRegion(region: ELVLRegion): void {
-    if (region == null) {
-      throw new Error('The ELVLRegion is null or undefined.');
-    } else if (this.hasRegion(region)) {
+    if (this.hasRegion(region)) {
       throw new Error('The ELVLRegion is already in the collection.');
     }
     this.regions.push(region);
   }
 
-  hasChunk(chunk: ELVLChunk): boolean {
-    if (chunk == null) {
-      throw new Error('The ELVL chunk given is null or undefined.');
-    }
-    for (let index = 0; index < this.chunks.length; index++) {
-      const next = this.chunks[index];
-      if (chunk.equals(next)) {
-        return true;
-      }
-    }
-    return false;
+  hasChunk(want: ELVLChunk): boolean {
+    return this.chunks.some(have => want.equals(have));
   }
 
-  hasAttribute(attribute: ELVLAttribute): boolean {
-    if (attribute == null) {
-      throw new Error('The ELVLAttribute is null or undefined.');
-    }
-    for (let index = 0; index < this.chunks.length; index++) {
-      const next = this.chunks[index];
-      if (attribute.equals(next)) {
-        return true;
-      }
-    }
-    return false;
+  hasAttribute(want: ELVLAttribute): boolean {
+    return this.attributes.some(have => want.equals(have));
   }
 
-  hasRegion(region: ELVLRegion): boolean {
-    if (region == null) {
-      throw new Error('The ELVLRegion is null or undefined.');
-    }
-    for (let index = 0; index < this.chunks.length; index++) {
-      const next = this.chunks[index];
-      if (region.equals(next)) {
-        return true;
-      }
-    }
-    return false;
+  hasRegion(want: ELVLRegion): boolean {
+    return this.regions.some(have => want.equals(have));
   }
 
   addAttribute(attribute: ELVLAttribute): void {
-    if (attribute == null) {
-      throw new Error('The ELVLAttribute is null or undefined.');
-    } else if (this.hasAttribute(attribute)) {
+    if (this.hasAttribute(attribute)) {
       throw new Error('The ELVLAttribute is already in the collection.');
     }
     this.attributes.push(attribute);
   }
+  
+  // TODO(JabJabJab): You can just access the public variables; TS doesn't encourage privacy and getters like Java does.
+  // If you ever need to, you can still override the getter on the proprety later, e.g.:
+  // get attributes() {
+  //   return someComplexWork();
+  // }
+  // I'm leaving them here in case there are references.
 
   getAttributes(): ELVLAttribute[] {
     return this.attributes;
@@ -139,244 +70,106 @@ export class ELVLCollection {
   }
 }
 
-/**
- * The <i>ELVLRawChunk</i> class. TODO: Document.
- *
- * @author Jab
- */
-export class ELVLRawChunk extends ELVLChunk {
+// TODO(JabJabJab): Consider making this abstract.
+// Also, it'd be good to move it down to where all its implementations are.
+export class ELVLRawChunk implements ELVLChunk {
+  constructor(readonly id: string, readonly data: Buffer) {}
 
-  data: Buffer;
-
-  /**
-   * @constructor
-   *
-   * @param {string} id
-   * @param {Buffer} data
-   */
-  constructor(id: string, data: Buffer) {
-    super(id);
-    this.data = data;
+  /** @override */
+  equals(next: ELVLChunk): boolean {
+    return (next instanceof ELVLRawChunk) && next === this;
   }
 
   /** @override */
-  equals(next: any): boolean {
-    if (next == null || !(next instanceof ELVLRawChunk)) {
-      return false;
-    }
-    return next === this;
-  }
-
-  /** @override */
-  validate(): void {
-    if (this.data == null) {
-      throw new Error('The "data" field of the ELVLRawChunk is null or undefined.');
-    }
-  }
+  validate(): void {}
 }
 
-/**
- * The <i>ELVLAttribute</i> class. TODO: Document.
- *
- * @author Jab
- */
-export class ELVLAttribute extends ELVLChunk {
+export class ELVLAttribute implements ELVLChunk {
+  readonly id = 'ATTR';
 
-  name: string;
-  value: string;
-
-  /**
-   * @constructor
-   *
-   * @param {string} name
-   * @param {string} value
-   */
-  constructor(name: string, value: string) {
-    super('ATTR');
-    this.name = name;
-    this.value = value;
+  constructor(readonly name: string, readonly value: string) {
     this.validate();
   }
 
   /** @override */
-  equals(next: any): boolean {
-    if (next == null || !(next instanceof ELVLAttribute)) {
-      return false;
-    }
-    return next.id == this.id && next.name == this.name && next.value == this.value;
+  equals(next: ELVLChunk): boolean {
+    return next instanceof ELVLAttribute && next.id == this.id && next.name == this.name && next.value == this.value;
   }
 
   /** @override */
-  validate(): void {
-    if (this.name == null) {
-      throw new Error("The 'name' field of the ELVLAttribute is null or undefined.");
-    } else if (this.value == null) {
-      throw new Error("The 'value' field of the ELVLAttribute '" + this.name + "' is null or undefined.");
-    }
-  }
+  validate(): void {}
 }
 
-/**
- * The <i>ELVLRegion</i> class. TODO: Document.
- *
- * @author Jab
- */
-export class ELVLRegion extends ELVLChunk {
+export class ELVLRegion implements ELVLChunk {
+  readonly id = 'REGN';
 
-  chunks: ELVLRegionChunk[];
-  tileData: ELVLRegionTileData;
-  autoWarp: ELVLRegionAutoWarp;
-  options: ELVLRegionOptions;
-  color: number[];
-  name: string;
-  pythonCode: string;
+  color: number[] = [0, 0, 0];
 
-  /**
-   * @constructor
-   *
-   * @param {string} name
-   * @param {ELVLRegionOptions} options
-   * @param {ELVLRegionTileData} tileData
-   * @param {ELVLRegionAutoWarp} autoWarp
-   * @param {string} pythonCode
-   * @param {ELVLRegionChunk} chunks
-   */
   constructor(
-    name: string,
-    options: ELVLRegionOptions = null,
-    tileData: ELVLRegionTileData = new ELVLRegionTileData(),
-    autoWarp: ELVLRegionAutoWarp = null,
-    pythonCode: string = null,
-    chunks: ELVLRegionChunk[] = []
+    readonly name: string,
+    // TODO(JabJabJab): If you actually want a mutable copy, add a helper function for it.  Assigning null here means 'options' has type ELVLRegionOptions|null.
+    readonly options: ELVLRegionOptions = ELVL.DEFAULT_REGION_OPTIONS,
+    readonly tileData: ELVLRegionTileData = new ELVLRegionTileData(),
+    readonly autoWarp: ELVLRegionAutoWarp|null = null,
+    readonly pythonCode: string|null = null,
+    readonly chunks: ELVLRegionChunk[] = []
   ) {
-    super('REGN');
-    this.name = name;
-    this.tileData = tileData;
-    this.autoWarp = autoWarp;
-    this.pythonCode = pythonCode;
-    this.chunks = chunks;
-    this.color = [0, 0, 0];
-    // Clone DEFAULT_REGION_OPTIONS.
-    if (options == null) {
-      options = {
-        isFlagBase: ELVL.DEFAULT_REGION_OPTIONS.isFlagBase,
-        noAntiWarp: ELVL.DEFAULT_REGION_OPTIONS.noAntiWarp,
-        noWeapons: ELVL.DEFAULT_REGION_OPTIONS.noWeapons,
-        noFlagDrops: ELVL.DEFAULT_REGION_OPTIONS.noFlagDrops
-      };
-    }
-    this.options = options;
     this.validate();
   }
 
   /** @override */
-  equals(next: any): boolean {
-    if (next == null || !(next instanceof ELVLRegion)) {
-      return false;
-    }
+  equals(next: ELVLRegion): boolean {
     return next.id === this.id && next.name === this.name;
   }
 
   /** @override */
   validate(): void {
-    if (this.name == null) {
-      throw new Error('The "name" field for the ELVLRegion is null or undefined.');
-    } else if (this.options == null) {
-      throw new Error(`The "options" field for the ELVLRegion '${this.name}' is null or undefined.`);
-    } else if (this.options.noAntiWarp == null) {
-      throw new Error(`The "noAntiWarp" options field for the ELVLRegion '${this.name}' is null or undefined.`);
-    } else if (this.options.noWeapons == null) {
-      throw new Error(`The "noWeapons" options field for the ELVLRegion '${this.name}' is null or undefined.`);
-    } else if (this.options.noFlagDrops == null) {
-      throw new Error(`The "noFlagDrops" options field for the ELVLRegion '${this.name}' is null or undefined.`);
-    } else if (this.options.isFlagBase == null) {
-      throw new Error(`The "isFlagBase" options field for the ELVLRegion '${this.name}' is null or undefined.`);
-    }
     if (this.autoWarp != null) {
       this.autoWarp.validate();
     }
-    if (this.tileData != null) {
-      this.tileData.validate();
-    }
+    this.tileData.validate();
   }
 }
 
-/**
- * The <i>ELVLRegionRawChunk</i> class. TODO: Document.
- *
- * @author Jab
- */
-export class ELVLRegionRawChunk extends ELVLRegionChunk {
+export class ELVLRegionRawChunk implements ELVLRegionChunk {
 
-  type: number;
-  data: Buffer;
+  constructor(readonly id: string, readonly data: Buffer) {}
 
-  /**
-   * @constructor
-   *
-   * @param {string} id
-   * @param {Buffer} data
-   */
-  constructor(id: string, data: Buffer) {
-    super(id);
-    this.data = data;
-  }
-
+  // TODO(JabJabJab): This is not currently not overriding anything!
   /** @override */
   equals(other: any): boolean {
-    if (other == null || !(other instanceof ELVLRegionRawChunk)) {
-      return false;
-    }
     return other === this;
   }
 }
 
-/**
- * The <i>ELVLRegionTileData<i> class. TODO: Document.
- *
- * @author Jab
- */
-export class ELVLRegionTileData extends ELVLRegionChunk {
-
+export class ELVLRegionTileData implements ELVLRegionChunk {
+  readonly id = 'rTIL';
   readonly tiles: boolean[][];
 
-  /**
-   * @constructor
-   *
-   * @param {boolean[][]} tiles
-   */
-  constructor(tiles: boolean[][] = null) {
-    super('rTIL');
-    if (tiles == null) {
-      // Create a new blank array.
-      tiles = new Array(1024);
-      for (let x = 0; x < 1024; x++) {
-        tiles[x] = new Array(1024);
-        for (let y = 0; y < 1024; y++) {
-          tiles[x][y] = false;
-        }
-      }
-    }
-    this.tiles = tiles;
+  constructor(readonly tiles: boolean[][] = ELVLRegionTileData.blankTileData()) {
     this.validate();
   }
+  
+  private static blankTileData(): boolean[][] {
+      // Create a new blank array.
+      const tiles = new Array(1024);
+      for (let x = 0; x < 1024; x++) {
+        tiles[x] = new Array(1024);
+        tiles[x].fill(false);
+      }
+    return tiles;
+  }
+    
 
+  // TODO(JabJabJab): This is not currently not overriding anything!
   /** @override */
   validate(): void {
     // TODO: Implement.
   }
 }
 
-/**
- * The <i>ELVLRegionAutoWarp<i> class. TODO: Document.
- *
- * @author Jab
- */
-export class ELVLRegionAutoWarp extends ELVLRegionChunk {
-
-  x: number;
-  y: number;
-  arena: string;
+export class ELVLRegionAutoWarp implements ELVLRegionChunk {
+  readonly id = 'rAWP';
 
   /**
    * @constructor
@@ -391,14 +184,11 @@ export class ELVLRegionAutoWarp extends ELVLRegionChunk {
    *
    * @param {string} arena The arena name to warp to. Set to null not warp to a different arena.
    */
-  constructor(x: number, y: number, arena: string = null) {
-    super('rAWP');
-    this.x = x;
-    this.y = y;
-    this.arena = arena;
+  constructor(readonly x: number, readonly y: number, readonly arena: string|null = null) {
     this.validate();
   }
 
+  // TODO(JabJabJab): This is not currently not overriding anything!
   /** @override */
   validate(): void {
     if (this.x < -1) {
@@ -419,41 +209,33 @@ export class ELVLRegionAutoWarp extends ELVLRegionChunk {
   }
 }
 
-/**
- * The <i>ELVLWallTiles</i> class. TODO: Document.
- *
- * @author Jab
- */
-export class ELVLWallTiles extends ELVLChunk {
+export class ELVLWallTiles implements ELVLChunk {
 
-  public static readonly TOP_LEFT_CORNER = 9;
-  public static readonly TOP_JUNCTION = 13;
-  public static readonly TOP_RIGHT_CORNER = 12;
-  public static readonly LEFT_JUNCTION = 11;
-  public static readonly CENTER = 15;
-  public static readonly RIGHT_JUNCTION = 14;
-  public static readonly BOTTOM_LEFT_CORNER = 3;
-  public static readonly BOTTOM_JUNCTION = 7;
-  public static readonly BOTTOM_RIGHT_CORNER = 6;
-  public static readonly VERTICAL_TOP_CAP = 8;
-  public static readonly VERTICAL = 10;
-  public static readonly VERTICAL_BOTTOM_CAP = 2;
-  public static readonly HORIZONTAL_LEFT_CAP = 1;
-  public static readonly HORIZONTAL = 5;
-  public static readonly HORIZONTAL_RIGHT_CAP = 4;
-  public static readonly DOT = 0;
+  static readonly TOP_LEFT_CORNER = 9;
+  static readonly TOP_JUNCTION = 13;
+  static readonly TOP_RIGHT_CORNER = 12;
+  static readonly LEFT_JUNCTION = 11;
+  static readonly CENTER = 15;
+  static readonly RIGHT_JUNCTION = 14;
+  static readonly BOTTOM_LEFT_CORNER = 3;
+  static readonly BOTTOM_JUNCTION = 7;
+  static readonly BOTTOM_RIGHT_CORNER = 6;
+  static readonly VERTICAL_TOP_CAP = 8;
+  static readonly VERTICAL = 10;
+  static readonly VERTICAL_BOTTOM_CAP = 2;
+  static readonly HORIZONTAL_LEFT_CAP = 1;
+  static readonly HORIZONTAL = 5;
+  static readonly HORIZONTAL_RIGHT_CAP = 4;
+  static readonly DOT = 0;
 
-  tiles: number[];
+  readonly id = 'DCWT';
 
-  constructor(tiles: number[] = null) {
-    super('DCWT');
-    if (tiles == null) {
-      tiles = new Array(16);
-      for (let index = 0; index < 16; index++) {
-        tiles[index] = 0;
-      }
-    }
-    this.tiles = tiles;
+  constructor(readonly tiles: number[] = ELVLWallTiles.blankTileData()) {}
+  
+  private static blankTileData(): number[] {
+    const tiles = new Array(16);
+    tiles.fill(0);
+    return tiles;
   }
 
   getTile(index: number): number {
@@ -484,9 +266,9 @@ export class ELVLWallTiles extends ELVLChunk {
   }
 
   /** @override */
-  equals(next: any): boolean {
+  equals(next: ELVLChunk): boolean {
     // Make sure that this is a wall-tile definition.
-    if (next == null || !(next instanceof ELVLWallTiles)) {
+    if (!(next instanceof ELVLWallTiles)) {
       return false;
     }
     // Check each wall-tile definition.
@@ -502,18 +284,12 @@ export class ELVLWallTiles extends ELVLChunk {
 
   /** @override */
   validate(): void {
-    if (this.tiles == null) {
-      throw new Error('The "tiles" array for the ELVLDCMEWallTile is null or undefined.');
-    } else if (this.tiles.length !== 16) {
+    if (this.tiles.length !== 16) {
       throw new Error('The "tiles" array for the ELVLDCMEWallTile is not a size of 16 numbers.');
     } else {
       // Go through each tile index to make sure that it is a valid tile ID.
       for (let index = 0; index < 16; index++) {
-        if (typeof this.tiles[index] !== 'number') {
-          throw new Error(
-            `The entry "tiles[${index}]" for the ELVLDCMEWallTile is not a number. (${this.tiles[index]} assigned)`
-          );
-        } else if (this.tiles[index] < 0) {
+        if (this.tiles[index] < 0) {
           throw new Error(
             `The entry "tiles[${index}]" for the ELVLDCMEWallTile is less than 0. (${this.tiles[index]} assigned)`
           );
@@ -527,62 +303,31 @@ export class ELVLWallTiles extends ELVLChunk {
   }
 }
 
-/**
- * The <i>ELVLTextTiles</i> class. TODO: Document.
- *
- * @author Jab
- */
-export class ELVLTextTiles extends ELVLChunk {
-
-  readonly charMap: number[];
-
-  /**
-   * @constructor
-   *
-   * @param {number[]} chars
-   */
-  constructor(chars: number[] = null) {
-    super('DCTT');
-
-    if (chars == null) {
-      // Create a blank array for chars.
-      chars = new Array(256);
-      // Set all chars as not assigned.
-      for (let index = 0; index > chars.length; index++) {
-        chars[index] = 0;
-      }
-    }
-
-    this.charMap = chars;
+export class ELVLTextTiles implements ELVLChunk {
+  readonly id = 'DCTT';
+  constructor(readonly charMap: number[] = ELVLTextTiles.blankCharMap()) {}
+  
+  private static blankCharMap(): number[] {
+    const tiles = new Array(256);
+    tiles.fill(0);
+    return tiles;
   }
 
   /** @override */
-  equals(next: any): boolean {
-    if (next == null || !(next instanceof ELVLTextTiles)) {
-      return false;
-    }
-    for (let index = 0; index < this.charMap.length; index++) {
-      if (next.charMap[index] !== this.charMap[index]) {
-        return false;
-      }
-    }
-    return true;
+  equals(next: ELVLChunk): boolean {
+    return next instanceof ELVLTextTiles && this.charMap.every((el, index) => el === this.charMap[index]);
   }
 
   /** @override */
   validate(): void {
-    if (this.charMap == null) {
-      throw new Error('The "charMap" field for the ELVLDCMETextTiles is null or undefined.');
-    } else if (this.charMap.length != 256) {
+    if (this.charMap.length != 256) {
       throw new Error(
         `The "charMap" field for the ELVLDCMETextTiles is not 256 in size. (${this.charMap.length} in size)`
       );
     } else {
       for (let index = 0; index < this.charMap.length; index++) {
         const next = this.charMap[index];
-        if (typeof next !== 'number') {
-          throw new Error(`"charMap[${index}]" is not a number. (${next} assigned)`);
-        } else if (next < 0) {
+        if (next < 0) {
           throw new Error(`"charMap[${index}]" is negative. (${next} assigned)`);
         }
       }
@@ -590,87 +335,32 @@ export class ELVLTextTiles extends ELVLChunk {
   }
 }
 
-/**
- * The <i>ELVLDCMEHashCode</i> class. TODO: Document.
- *
- * @author Jab
- */
-export class ELVLHashCode extends ELVLChunk {
+export class ELVLHashCode implements ELVLChunk {
+  readonly id = 'DCID';
 
-  hashCode: string;
+  constructor(readonly hashCode: string) {}
 
-  /**
-   * @constructor
-   *
-   * @param {string} hashCode
-   */
-  constructor(hashCode: string) {
-    super('DCID');
-    if (hashCode == null) {
-      throw new Error('The hashCode given is null or undefined.');
-    }
-    this.hashCode = hashCode;
+  /** @override */
+  equals(next: ELVLChunk): boolean {
+    return next instanceof ELVLHashCode && next.hashCode === this.hashCode;
   }
 
   /** @override */
-  equals(next: any): boolean {
-    if (next == null || !(next instanceof ELVLHashCode)) {
-      return false;
-    }
-    return next.hashCode === this.hashCode;
-  }
-
-  /** @override */
-  validate(): void {
-    if (this.hashCode == null) {
-      throw new Error('The "hashCode" field for the ELVLDCMEHashCode is null or undefined.');
-    } else if (typeof this.hashCode !== 'string') {
-      throw new Error(
-        `The "hashCode" field for the ELVLDCMEHashCode is not a string. (${this.hashCode} assigned)`
-      );
-    }
-  }
+  validate(): void {}
 }
 
-/**
- * The <i>ELVLBookmarks</i> class. TODO: Document.
- *
- * @author Jab
- */
 export class ELVLBookmarks extends ELVLRawChunk {
-
-  /**
-   * @constructor
-   *
-   * @param {Buffer} data
-   */
   constructor(data: Buffer) {
     super('DCBM', data);
   }
 }
 
-/**
- * The <i>ELVLLVZPath</i> class. TODO: Document.
- *
- * @author Jab
- */
 export class ELVLLVZPath extends ELVLRawChunk {
-
-  /**
-   * @constructor
-   *
-   * @param {Buffer} data
-   */
   constructor(data: Buffer) {
     super('DCLV', data);
   }
 }
 
-/**
- * The <i>ELVLRegionOptions</i> interface. TODO: Document.
- *
- * @author Jab
- */
 export interface ELVLRegionOptions {
   isFlagBase: boolean;
   noAntiWarp: boolean;
